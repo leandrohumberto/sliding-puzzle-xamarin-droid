@@ -2,6 +2,7 @@
 using Android.Widget;
 using Android.OS;
 using Android.Graphics;
+using Android.Views;
 
 namespace AndroidSlidingPuzzleCSharp
 {
@@ -11,6 +12,7 @@ namespace AndroidSlidingPuzzleCSharp
         Button resetButton;
         GridLayout mainLayout;
         int gameViewWidth;
+        int tileWidth;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -20,11 +22,56 @@ namespace AndroidSlidingPuzzleCSharp
             SetContentView(Resource.Layout.Main);
 
             resetButton = FindViewById<Button>(Resource.Id.resetButtonId);
-            resetButton.Click += ResetMethod;
+            resetButton.Click += Reset;
 
             mainLayout = FindViewById<GridLayout>(Resource.Id.gameGridLayoutId);
             gameViewWidth = Resources.DisplayMetrics.WidthPixels;
+
             SetGameView();
+            MakeTiles();
+        }
+
+        private void MakeTiles()
+        {
+            // Calculate the width/height of the tiles
+            tileWidth = gameViewWidth / 4;
+
+            // Counter for the tile numbers
+            int count = 1;
+
+            for (int row = 0; row < 4; row++)
+            {
+                for (int col = 0; col < 4; col++)
+                {
+                    // Create the tile (TextView)
+                    TextView textTile = new TextView(this);
+
+                    // Create the specifications that establish in which row and column the tile is going to be rendered
+                    GridLayout.Spec rowSpec = GridLayout.InvokeSpec(row);
+                    GridLayout.Spec colSpec = GridLayout.InvokeSpec(col);
+
+                    // Create a new layout parameter object for the tile using the previous specs
+                    GridLayout.LayoutParams tileLayoutParams = new GridLayout.LayoutParams(rowSpec, colSpec);
+                    tileLayoutParams.Width = tileWidth - 10;
+                    tileLayoutParams.Height = tileWidth - 10;
+                    tileLayoutParams.SetMargins(5, 5, 5, 5);
+
+                    // Set the tile with the layout parameter
+                    textTile.LayoutParameters = tileLayoutParams;
+
+                    // Change the color
+                    textTile.SetBackgroundColor(Color.Green);
+
+                    // Set the text
+                    textTile.Text = count++.ToString();
+                    textTile.SetTextColor(Color.Black);
+                    textTile.TextSize = 40;
+                    textTile.Gravity = GravityFlags.Center;
+
+                    // Add the tile to the game's grid layout
+                    mainLayout.AddView(textTile);
+                }
+            }
         }
 
         private void SetGameView()
@@ -35,7 +82,7 @@ namespace AndroidSlidingPuzzleCSharp
             mainLayout.SetBackgroundColor(Color.Gray);
         }
 
-        private void ResetMethod(object sender, System.EventArgs e)
+        private void Reset(object sender, System.EventArgs e)
         {
             
         }
