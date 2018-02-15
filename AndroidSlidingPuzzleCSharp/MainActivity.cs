@@ -9,7 +9,7 @@ using Android.Content;
 
 namespace AndroidSlidingPuzzleCSharp
 {
-    [Activity(Label = "AndroidSlidingPuzzleCSharp", MainLauncher = true)]
+    [Activity(Label = "Sliding Puzzle", MainLauncher = true)]
     public class MainActivity : Activity
     {
         Button resetButton;
@@ -39,6 +39,9 @@ namespace AndroidSlidingPuzzleCSharp
 
         private void MakeTiles()
         {
+            // Clean up the GridLayout
+            mainLayout.RemoveAllViews();
+
             // Calculate the width/height of the tiles
             tileWidth = gameViewWidth / 4;
 
@@ -59,10 +62,7 @@ namespace AndroidSlidingPuzzleCSharp
                     // Set the tile with the layout parameter
                     textTile.LayoutParameters = GetTileLayoutParams(row, col);
 
-                    // Change the color
                     textTile.SetBackgroundColor(Color.Green);
-
-                    // Set the text
                     textTile.Text = count++.ToString();
                     textTile.SetTextColor(Color.Black);
                     textTile.TextSize = 40;
@@ -87,15 +87,27 @@ namespace AndroidSlidingPuzzleCSharp
 
         private void TileTouched(object sender, View.TouchEventArgs e)
         {
+            // Check if the touch has finished
             if (e.Event.Action == MotionEventActions.Up)
             {
                 TextTileView view = (TextTileView)sender;
-                AlertDialog.Builder dialog = new AlertDialog.Builder(this);
 
-                dialog.SetMessage($"Touched Position: X = {view.PositionX}, Y = {view.PositionY}\n\n" 
-                    + $"Empty Position X = {emptySpot.X}, Y = {emptySpot.Y}\n\n");
-                dialog.SetNeutralButton("OK", delegate { });
-                dialog.Show();
+                // Calculate the distance between the touched tile and the empty spot
+                double xDiff = Math.Pow(view.PositionX - emptySpot.X, 2);
+                double yDiff = Math.Pow(view.PositionY - emptySpot.Y, 2);
+                double distance = Math.Sqrt(xDiff + yDiff);
+
+                // If they're adjacent, move the tile
+                if (distance == 1)
+                {
+                    view.LayoutParameters = GetTileLayoutParams(emptySpot.X, emptySpot.Y);
+                    int emptyX = emptySpot.X;
+                    int emptyY = emptySpot.Y;
+                    emptySpot.X = view.PositionX;
+                    emptySpot.Y = view.PositionY;
+                    view.PositionX = emptyX;
+                    view.PositionY = emptyY;
+                }
             }
         }
 
@@ -106,15 +118,22 @@ namespace AndroidSlidingPuzzleCSharp
 
             foreach (TextTileView view in tilesArray)
             {
+                // Select an available position randomly
                 int position = random.Next(0, tempArray.Count);
                 Point coord = (Point)tempArray[position];
+
+                // Set the layout parameters
                 view.LayoutParameters = GetTileLayoutParams(coord.X, coord.Y);
+
+                // Update the position properties of the tile
                 view.PositionX = coord.X;
                 view.PositionY = coord.Y;
 
+                // Remove the selected position
                 tempArray.RemoveAt(position);
             }
 
+            // After finishing the iteration, there empty spot remains
             emptySpot = (Point)tempArray[0];
         }
 
@@ -142,7 +161,7 @@ namespace AndroidSlidingPuzzleCSharp
 
         private void Reset(object sender, EventArgs e)
         {
-            Randomize();
+            MakeTiles();
         }
 
         private class TextTileView : TextView
