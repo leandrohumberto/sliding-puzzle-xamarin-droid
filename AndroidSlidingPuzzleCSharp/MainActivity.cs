@@ -5,6 +5,7 @@ using Android.Graphics;
 using Android.Views;
 using System.Collections;
 using System;
+using Android.Content;
 
 namespace AndroidSlidingPuzzleCSharp
 {
@@ -17,6 +18,7 @@ namespace AndroidSlidingPuzzleCSharp
         int tileWidth;
         ArrayList tilesArray;
         ArrayList coordsArray;
+        Point emptySpot;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -51,21 +53,11 @@ namespace AndroidSlidingPuzzleCSharp
             {
                 for (int col = 0; col < 4; col++)
                 {
-                    // Create the tile (TextView)
-                    TextView textTile = new TextView(this);
-
-                    // Create the specifications that establish in which row and column the tile is going to be rendered
-                    GridLayout.Spec rowSpec = GridLayout.InvokeSpec(row);
-                    GridLayout.Spec colSpec = GridLayout.InvokeSpec(col);
-
-                    // Create a new layout parameter object for the tile using the previous specs
-                    GridLayout.LayoutParams tileLayoutParams = new GridLayout.LayoutParams(rowSpec, colSpec);
-                    tileLayoutParams.Width = tileWidth - 10;
-                    tileLayoutParams.Height = tileWidth - 10;
-                    tileLayoutParams.SetMargins(5, 5, 5, 5);
+                    // Create the tile (TextTileView)
+                    TextTileView textTile = new TextTileView(this);
 
                     // Set the tile with the layout parameter
-                    textTile.LayoutParameters = tileLayoutParams;
+                    textTile.LayoutParameters = GetTileLayoutParams(row, col);
 
                     // Change the color
                     textTile.SetBackgroundColor(Color.Green);
@@ -88,14 +80,23 @@ namespace AndroidSlidingPuzzleCSharp
                 }
             }
 
-            mainLayout.RemoveView((TextView)tilesArray[15]);
+            mainLayout.RemoveView((TextTileView)tilesArray[15]);
             tilesArray.RemoveAt(15);
             Randomize();
         }
 
         private void TileTouched(object sender, View.TouchEventArgs e)
         {
-            
+            if (e.Event.Action == MotionEventActions.Up)
+            {
+                TextTileView view = (TextTileView)sender;
+                AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+
+                dialog.SetMessage($"Touched Position: X = {view.PositionX}, Y = {view.PositionY}\n\n" 
+                    + $"Empty Position X = {emptySpot.X}, Y = {emptySpot.Y}\n\n");
+                dialog.SetNeutralButton("OK", delegate { });
+                dialog.Show();
+            }
         }
 
         private void Randomize()
@@ -103,22 +104,32 @@ namespace AndroidSlidingPuzzleCSharp
             ArrayList tempArray = new ArrayList(coordsArray);
             Random random = new Random();
 
-            foreach (TextView view in tilesArray)
+            foreach (TextTileView view in tilesArray)
             {
                 int position = random.Next(0, tempArray.Count);
                 Point coord = (Point)tempArray[position];
-
-                GridLayout.Spec rowSpec = GridLayout.InvokeSpec(coord.X);
-                GridLayout.Spec colSpec = GridLayout.InvokeSpec(coord.Y);
-                GridLayout.LayoutParams tileLayoutParams = new GridLayout.LayoutParams(rowSpec, colSpec);
-                tileLayoutParams.Width = tileWidth - 10;
-                tileLayoutParams.Height = tileWidth - 10;
-                tileLayoutParams.SetMargins(5, 5, 5, 5);
-
-                view.LayoutParameters = tileLayoutParams;
+                view.LayoutParameters = GetTileLayoutParams(coord.X, coord.Y);
+                view.PositionX = coord.X;
+                view.PositionY = coord.Y;
 
                 tempArray.RemoveAt(position);
             }
+
+            emptySpot = (Point)tempArray[0];
+        }
+
+        private GridLayout.LayoutParams GetTileLayoutParams(int x, int y)
+        {
+            // Create the specifications that establish in which row and column the tile is going to be rendered
+            GridLayout.Spec rowSpec = GridLayout.InvokeSpec(x);
+            GridLayout.Spec colSpec = GridLayout.InvokeSpec(y);
+
+            // Create a new layout parameter object for the tile using the previous specs
+            GridLayout.LayoutParams tileLayoutParams = new GridLayout.LayoutParams(rowSpec, colSpec);
+            tileLayoutParams.Width = tileWidth - 10;
+            tileLayoutParams.Height = tileWidth - 10;
+            tileLayoutParams.SetMargins(5, 5, 5, 5);
+            return tileLayoutParams;
         }
 
         private void SetGameView()
@@ -129,9 +140,19 @@ namespace AndroidSlidingPuzzleCSharp
             mainLayout.SetBackgroundColor(Color.Gray);
         }
 
-        private void Reset(object sender, System.EventArgs e)
+        private void Reset(object sender, EventArgs e)
         {
             Randomize();
+        }
+
+        private class TextTileView : TextView
+        {
+            public int PositionX { get; set; }
+            public int PositionY { get; set; }
+
+            public TextTileView(Context context) : base(context)
+            {
+            }
         }
     }
 }
